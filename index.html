@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Responsive Table Maker → WordPress HTML</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--gap:.75rem;--bg:#0ea5e9;--radius:12px;--ring:#e5e7eb;--text:#0f172a}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;color:var(--text);background:#f7f7f8}
+  .wrap{max-width:1100px;margin:0 auto;padding:1.25rem}
+  .panel{background:#fff;border:1px solid var(--ring);border-radius:16px;padding:1rem}
+  h1{font-size:1.6rem;margin:0 0 .5rem;font-weight:800}
+  h2{font-size:1.1rem;margin:0 0 .75rem}
+  label{font-size:.92rem;color:#334155}
+  input[type="number"],input[type="text"],textarea,select{
+    width:100%;border:1px solid var(--ring);border-radius:10px;padding:.55rem .7rem;font:inherit;background:#fff
+  }
+  input[type="checkbox"]{transform:translateY(1px)}
+  button{border:0;background:#111827;color:#fff;border-radius:10px;padding:.6rem .9rem;font-weight:700;cursor:pointer}
+  button.secondary{background:#fff;color:#111827;border:1px solid var(--ring)}
+  button.blue{background:var(--bg)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .row{display:grid;grid-template-columns:repeat(12,1fr);gap:.6rem;margin:.6rem 0}
+  .col-3{grid-column:span 3}
+  .col-4{grid-column:span 4}
+  .col-5{grid-column:span 5}
+  .col-6{grid-column:span 6}
+  .col-7{grid-column:span 7}
+  .col-8{grid-column:span 8}
+  .col-9{grid-column:span 9}
+  .stack{display:flex;flex-wrap:wrap;gap:.5rem}
+  .stack > *{flex:1 1 180px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:.5rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--gap)}
+  .muted{color:#64748b}
+  .hint{font-size:.85rem;color:#64748b}
+  .kbd{font:600 .8rem/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:.2rem .35rem}
+  .card{background:#fff;border:1px solid var(--ring);border-radius:16px;padding:1rem}
+
+  /* Editable table (builder) */
+  table.builder{width:100%;border-collapse:separate;border-spacing:0}
+  table.builder td, table.builder th{border:1px dashed #e2e8f0;padding:.5rem .6rem;vertical-align:top}
+  table.builder td{background:#fafafa}
+  table.builder th{background:#eef6ff;font-weight:700}
+  td[contenteditable], th[contenteditable]{outline:2px solid transparent}
+  td[contenteditable]:focus, th[contenteditable]:focus{outline:2px solid #93c5fd;background:#fff}
+
+  /* Preview base styles (what we’ll export) */
+  .rtm-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .rtm{width:100%;border-collapse:collapse}
+  .rtm caption{caption-side:top;text-align:left;font-weight:700;margin-bottom:.5rem}
+  .rtm th,.rtm td{padding:.65rem .8rem;text-align:left}
+  .rtm.bordered th,.rtm.bordered td{border:1px solid #e5e7eb}
+  .rtm.compact th,.rtm.compact td{padding:.45rem .6rem}
+  .rtm.striped tbody tr:nth-child(odd){background:#fafafa}
+  .rtm thead th{background:#f1f5f9;font-weight:700}
+
+  /* Stack-on-mobile pattern (using data-label) */
+  @media (max-width: 640px){
+    .rtm.stack thead{display:none}
+    .rtm.stack tr{display:block;border:1px solid #e5e7eb;border-radius:10px;margin:0 0 .6rem;background:#fff}
+    .rtm.stack td{display:grid;grid-template-columns:10ch auto;border:none;border-bottom:1px solid #f1f5f9}
+    .rtm.stack td:last-child{border-bottom:0}
+    .rtm.stack td::before{content:attr(data-label);font-weight:600;color:#334155;padding-right:.8rem}
+  }
+
+  /* Output box */
+  textarea#output{min-height:210px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .copy-ok{color:#16a34a;font-weight:700}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Responsive Table Maker → WordPress HTML</h1>
+    <p class="muted">Build your table, see the live preview, then click <b>Generate HTML</b> and paste it into a WordPress <i>Custom HTML</i> block or widget.</p>
+
+    <div class="grid">
+      <!-- BUILDER -->
+      <section class="panel">
+        <h2>1) Build your table</h2>
+        <div class="row">
+          <div class="col-3">
+            <label>Rows</label>
+            <input type="number" id="rows" min="1" value="4">
+          </div>
+          <div class="col-3">
+            <label>Columns</label>
+            <input type="number" id="cols" min="1" value="4">
+          </div>
+          <div class="col-6" style="display:flex;align-items:flex-end;gap:.5rem">
+            <button class="secondary" id="addRow">+ Row</button>
+            <button class="secondary" id="addCol">+ Column</button>
+            <button class="secondary" id="delRow">− Row</button>
+            <button class="secondary" id="delCol">− Column</button>
+            <button id="clear" title="Clear cells" class="secondary">Clear</button>
+          </div>
+        </div>
+
+        <div class="stack" style="margin:.25rem 0 .75rem">
+          <label><input type="checkbox" id="headerRow" checked> Header row</label>
+          <label><input type="checkbox" id="headerCol"> Header column</label>
+        </div>
+
+        <div class="toolbar" style="margin:.25rem 0 .75rem">
+          <label class="stack">
+            <span>Caption</span>
+            <input type="text" id="caption" placeholder="Optional table caption">
+          </label>
+        </div>
+
+        <div class="hint">Tip: Click any cell below and start typing. Paste a CSV selection straight into the table. Use <span class="kbd">Tab</span> / <span class="kbd">Shift+Tab</span> to move.</div>
+
+        <div id="builderHolder" class="card" style="margin-top:.75rem;overflow:auto">
+          <!-- builder table injected here -->
+        </div>
+
+        <details style="margin-top:.75rem">
+          <summary class="hint">CSV import (optional)</summary>
+          <textarea id="csv" placeholder="Paste CSV here (rows separated by newlines, columns by commas)" style="width:100%;min-height:90px;margin-top:.5rem"></textarea>
+          <div style="display:flex;gap:.5rem;margin-top:.5rem">
+            <button class="secondary" id="importCsv">Import CSV</button>
+            <button class="secondary" id="downloadCsv">Download CSV</button>
+          </div>
+        </details>
+      </section>
+
+      <!-- OPTIONS + PREVIEW -->
+      <section class="panel">
+        <h2>2) Style & preview</h2>
+        <div class="stack" style="margin:.25rem 0 .75rem">
+          <label><input type="checkbox" id="optStriped" checked> Zebra stripes</label>
+          <label><input type="checkbox" id="optBordered"> Bordered</label>
+          <label><input type="checkbox" id="optCompact"> Compact</label>
+          <label><input type="checkbox" id="optStack" checked> Stack on mobile</label>
+        </div>
+        <div class="card">
+          <div class="rtm-wrap" id="previewWrap">
+            <!-- preview table injected here -->
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- OUTPUT -->
+    <section class="panel" style="margin-top:var(--gap)">
+      <h2>3) Generate → WordPress-friendly HTML</h2>
+      <div class="toolbar" style="margin-bottom:.5rem">
+        <button class="blue" id="generate">Generate HTML</button>
+        <button class="secondary" id="copy" disabled>Copy to clipboard</button>
+        <span id="copyMsg" class="hint" style="margin-left:.5rem"></span>
+      </div>
+      <textarea id="output" placeholder="Click Generate HTML to see your snippet…"></textarea>
+      <p class="hint" style="margin:.5rem 0 0">
+        In WordPress, add a <b>Custom HTML</b> block (or widget) and paste this code. It includes a tiny, scoped
+        <code>&lt;style&gt;</code> so it won’t clash with your theme.
+      </p>
+    </section>
+  </div>
+
+<script>
+/* ---------------------------
+   UTIL
+--------------------------- */
+const $ = s => document.querySelector(s);
+const uid = () => 'rtm-' + Math.random().toString(36).slice(2,8);
+
+/* ---------------------------
+   STATE
+--------------------------- */
+let R = parseInt($('#rows').value,10);
+let C = parseInt($('#cols').value,10);
+let data = Array.from({length:R},()=>Array.from({length:C},()=>'')); // cell matrix
+let uniqueId = uid();
+
+/* ---------------------------
+   BUILDER TABLE
+--------------------------- */
+function buildBuilder(){
+  const hasHeadRow = $('#headerRow').checked;
+  const hasHeadCol = $('#headerCol').checked;
+
+  const t = document.createElement('table');
+  t.className = 'builder';
+  const thead = document.createElement('thead');
+  const tbody = document.createElement('tbody');
+
+  // header row (optional)
+  if(hasHeadRow){
+    const tr = document.createElement('tr');
+    for(let j=0;j<C;j++){
+      const th = document.createElement('th');
+      th.contentEditable = true;
+      th.dataset.r = 0; th.dataset.c = j;
+      th.textContent = data[0]?.[j] ?? '';
+      addCellListeners(th);
+      tr.appendChild(th);
+    }
+    thead.appendChild(tr);
+  }
+
+  // body rows
+  for(let i=hasHeadRow?1:0;i<R;i++){
+    const tr = document.createElement('tr');
+    for(let j=0;j<C;j++){
+      const isHeaderCell = hasHeadCol && j===0;
+      const cell = document.createElement(isHeaderCell?'th':'td');
+      cell.contentEditable = true;
+      cell.dataset.r = i; cell.dataset.c = j;
+      cell.textContent = data[i]?.[j] ?? '';
+      if(isHeaderCell) cell.style.background = '#eef6ff';
+      addCellListeners(cell);
+      tr.appendChild(cell);
+    }
+    tbody.appendChild(tr);
+  }
+
+  t.appendChild(thead);
+  t.appendChild(tbody);
+
+  const holder = $('#builderHolder');
+  holder.innerHTML = '';
+  holder.appendChild(t);
+}
+
+function addCellListeners(cell){
+  cell.addEventListener('input', e=>{
+    const r = parseInt(cell.dataset.r,10);
+    const c = parseInt(cell.dataset.c,10);
+    ensureSize(r+1,c+1);
+    data[r][c] = cell.textContent;
+    renderPreview(); // live update
+  });
+
+  // allow tabbing like a spreadsheet
+  cell.addEventListener('keydown', e=>{
+    if(e.key==='Tab'){
+      e.preventDefault();
+      const dir = e.shiftKey?-1:1;
+      const cells = [...document.querySelectorAll('table.builder [contenteditable]')];
+      const idx = cells.indexOf(cell);
+      const next = cells[idx+dir];
+      if(next){ next.focus(); placeCursorEnd(next); }
+    }
+  });
+
+  // paste plain text
+  cell.addEventListener('paste', e=>{
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    document.execCommand('insertText', false, text);
+  });
+}
+function placeCursorEnd(el){
+  const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+  const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+}
+
+/* ---------------------------
+   PREVIEW TABLE (mirrors output)
+--------------------------- */
+function buildPreviewTable(){
+  const hasHeadRow = $('#headerRow').checked;
+  const hasHeadCol = $('#headerCol').checked;
+  const caption = $('#caption').value.trim();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'rtm-wrap';
+  const t = document.createElement('table');
+  t.className = 'rtm';
+  t.id = uniqueId;
+
+  if($('#optBordered').checked) t.classList.add('bordered');
+  if($('#optCompact').checked) t.classList.add('compact');
+  if($('#optStriped').checked) t.classList.add('striped');
+  if($('#optStack').checked) t.classList.add('stack');
+
+  if(caption){
+    const cap = document.createElement('caption');
+    cap.textContent = caption;
+    t.appendChild(cap);
+  }
+
+  const thead = document.createElement('thead');
+  const tbody = document.createElement('tbody');
+
+  // header row
+  if(hasHeadRow){
+    const tr = document.createElement('tr');
+    for(let j=0;j<C;j++){
+      const th = document.createElement('th');
+      th.textContent = (data[0]?.[j] ?? '');
+      tr.appendChild(th);
+    }
+    thead.appendChild(tr);
+  }
+
+  // body
+  for(let i=hasHeadRow?1:0;i<R;i++){
+    const tr = document.createElement('tr');
+    for(let j=0;j<C;j++){
+      const isHead = (j===0 && $('#headerCol').checked);
+      const cell = document.createElement(isHead?'th':'td');
+      const colHeaderText = getColHeaderText(j, hasHeadRow);
+      if($('#optStack').checked && !isHead && colHeaderText){
+        cell.setAttribute('data-label', colHeaderText);
+      }
+      cell.textContent = (data[i]?.[j] ?? '');
+      tr.appendChild(cell);
+    }
+    tbody.appendChild(tr);
+  }
+
+  if(thead.childElementCount) t.appendChild(thead);
+  t.appendChild(tbody);
+  wrap.appendChild(t);
+  return wrap;
+}
+
+function getColHeaderText(colIndex, hasHeadRow){
+  if(hasHeadRow) return data[0]?.[colIndex] ?? '';
+  if($('#headerCol').checked && colIndex===0) return ''; // first col becomes row header
+  return 'Col ' + (colIndex+1);
+}
+
+function renderPreview(){
+  const el = buildPreviewTable();
+  const holder = $('#previewWrap');
+  holder.innerHTML = '';
+  holder.appendChild(el);
+}
+
+/* ---------------------------
+   SIZING / MATRIX HELPERS
+--------------------------- */
+function ensureSize(r,c){
+  // grow rows
+  while(data.length<r){ data.push(Array.from({length:C},()=>'')); R=data.length; }
+  // grow cols
+  if(c>C){
+    const add = c-C;
+    data = data.map(row => row.concat(Array.from({length:add},()=>'')));
+    C = c;
+  }
+}
+function resizeMatrix(rows, cols){
+  // adjust rows
+  if(rows>data.length){
+    while(data.length<rows) data.push(Array.from({length:C},()=>'')); // add rows
+  } else if(rows<data.length){
+    data.length = rows;
+  }
+  R = rows;
+
+  // adjust cols
+  if(cols>C){
+    const add = cols-C;
+    data = data.map(row => row.concat(Array.from({length:add},()=>'')));
+  } else if(cols<C){
+    data = data.map(row => row.slice(0,cols));
+  }
+  C = cols;
+}
+
+/* ---------------------------
+   CSV
+--------------------------- */
+function parseCSV(text){
+  // tolerant CSV (no quotes-handling for simplicity)
+  return text.trim().split(/\r?\n/).map(line => line.split(','));
+}
+function toCSV(){
+  return data.map(r => r.map(v => (v ?? '').toString().replace(/,/g,';')).join(',')).join('\n');
+}
+
+/* ---------------------------
+   OUTPUT GENERATOR
+--------------------------- */
+function generateHTML(){
+  const hasHeadRow = $('#headerRow').checked;
+  const hasHeadCol = $('#headerCol').checked;
+  const caption = $('#caption').value.trim();
+
+  // Unique wrapper (scopes CSS to avoid theme collisions)
+  const id = uniqueId = uid();
+  const classes = [
+    'rtm',
+    $('#optBordered').checked ? 'bordered' : '',
+    $('#optCompact').checked ? 'compact' : '',
+    $('#optStriped').checked ? 'striped' : '',
+    $('#optStack').checked ? 'stack' : ''
+  ].filter(Boolean).join(' ');
+
+  // build table HTML
+  let html = '';
+  html += `<div class="rtm-wrap">\n<table id="${id}" class="${classes}">`;
+  if(caption) html += `\n  <caption>${escapeHtml(caption)}</caption>`;
+
+  if(hasHeadRow){
+    html += `\n  <thead>\n    <tr>`;
+    for(let j=0;j<C;j++){
+      html += `\n      <th>${escapeHtml(data[0]?.[j] ?? '')}</th>`;
+    }
+    html += `\n    </tr>\n  </thead>`;
+  }
+
+  html += `\n  <tbody>`;
+  for(let i=hasHeadRow?1:0;i<R;i++){
+    html += `\n    <tr>`;
+    for(let j=0;j<C;j++){
+      const isHead = (j===0 && hasHeadCol);
+      const tag = isHead ? 'th' : 'td';
+      const label = (!isHead && $('#optStack').checked) ? ` data-label="${escapeHtml(getColHeaderText(j, hasHeadRow))}"` : '';
+      html += `\n      <${tag}${label}>${escapeHtml(data[i]?.[j] ?? '')}</${tag}>`;
+    }
+    html += `\n    </tr>`;
+  }
+  html += `\n  </tbody>\n</table>\n</div>`;
+
+  // minimal styles (scoped to #id)
+  const css = `
+<style>
+#${id}{width:100%;border-collapse:collapse}
+#${id} caption{caption-side:top;text-align:left;font-weight:700;margin-bottom:.5rem}
+#${id} th,#${id} td{padding:.65rem .8rem;text-align:left}
+#${id}.bordered th,#${id}.bordered td{border:1px solid #e5e7eb}
+#${id}.compact th,#${id}.compact td{padding:.45rem .6rem}
+#${id}.striped tbody tr:nth-child(odd){background:#fafafa}
+#${id} thead th{background:#f1f5f9;font-weight:700}
+@media(max-width:640px){
+  #${id}.stack thead{display:none}
+  #${id}.stack tr{display:block;border:1px solid #e5e7eb;border-radius:10px;margin:0 0 .6rem;background:#fff}
+  #${id}.stack td{display:grid;grid-template-columns:10ch auto;border:none;border-bottom:1px solid #f1f5f9}
+  #${id}.stack td:last-child{border-bottom:0}
+  #${id}.stack td::before{content:attr(data-label);font-weight:600;color:#334155;padding-right:.8rem}
+}
+</style>`.trim();
+
+  $('#output').value = css + '\n' + html;
+  $('#copy').disabled = false;
+}
+
+/* ---------------------------
+   HELPERS
+--------------------------- */
+function escapeHtml(s=''){
+  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------------------------
+   EVENTS
+--------------------------- */
+$('#rows').addEventListener('change', e=>{
+  const v = Math.max(1, parseInt(e.target.value,10)||1);
+  resizeMatrix(v, C);
+  buildBuilder(); renderPreview();
+});
+$('#cols').addEventListener('change', e=>{
+  const v = Math.max(1, parseInt(e.target.value,10)||1);
+  resizeMatrix(R, v);
+  buildBuilder(); renderPreview();
+});
+
+['headerRow','headerCol','caption','optStriped','optBordered','optCompact','optStack']
+.forEach(id => $( '#'+id ).addEventListener('input', renderPreview));
+
+$('#addRow').onclick = ()=>{ resizeMatrix(R+1,C); buildBuilder(); renderPreview(); $('#rows').value=R; };
+$('#addCol').onclick = ()=>{ resizeMatrix(R,C+1); buildBuilder(); renderPreview(); $('#cols').value=C; };
+$('#delRow').onclick = ()=>{ if(R>1){ resizeMatrix(R-1,C); buildBuilder(); renderPreview(); $('#rows').value=R; } };
+$('#delCol').onclick = ()=>{ if(C>1){ resizeMatrix(R,C-1); buildBuilder(); renderPreview(); $('#cols').value=C; } };
+$('#clear').onclick  = ()=>{ data = data.map(r=>r.map(()=>'')); buildBuilder(); renderPreview(); };
+
+$('#importCsv').onclick = ()=>{
+  const lines = parseCSV($('#csv').value);
+  if(!lines.length) return;
+  const rows = lines.length;
+  const cols = Math.max(...lines.map(r => r.length));
+  resizeMatrix(rows, cols);
+  data = lines.map(row => row.concat(Array.from({length:cols-row.length},()=>'')));
+  $('#rows').value = R; $('#cols').value = C;
+  buildBuilder(); renderPreview();
+};
+$('#downloadCsv').onclick = ()=>{
+  const blob = new Blob([toCSV()],{type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'table.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+$('#generate').onclick = generateHTML;
+
+$('#copy').onclick = async ()=>{
+  try{
+    await navigator.clipboard.writeText($('#output').value);
+    $('#copyMsg').textContent = 'Copied ✔';
+    $('#copyMsg').className = 'copy-ok';
+    setTimeout(()=>{$('#copyMsg').textContent='';},1500);
+  }catch(e){
+    $('#copyMsg').textContent = 'Press Ctrl/Cmd+C to copy';
+  }
+};
+
+/* ---------------------------
+   INIT
+--------------------------- */
+buildBuilder();
+renderPreview();
+
+/* paste CSV directly into builder table: multi-cell paste */
+document.addEventListener('paste', e=>{
+  const active = document.activeElement;
+  if(active && active.matches('td[contenteditable],th[contenteditable]')){
+    const text = (e.clipboardData||window.clipboardData).getData('text');
+    if(text.includes('\n') || text.includes(',')){
+      e.preventDefault();
+      const startR = +active.dataset.r, startC = +active.dataset.c;
+      const rows = parseCSV(text);
+      ensureSize(startR + rows.length, startC + Math.max(...rows.map(r=>r.length)));
+      rows.forEach((row, ri)=>{
+        row.forEach((val, ci)=>{
+          data[startR+ri][startC+ci] = val;
+        });
+      });
+      buildBuilder(); renderPreview();
+      // refocus original
+      const sel = document.querySelector(`table.builder [data-r="${startR}"][data-c="${startC}"]`);
+      if(sel){ sel.focus(); placeCursorEnd(sel); }
+    }
+  }
+});
+</script>
+</body>
+</html>
