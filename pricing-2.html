@@ -1,1 +1,431 @@
 
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Responsive Horizontal Pricing Table Generator — Plans as Rows</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ring:#e5e7eb;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-weak:#eff6ff;--radius:14px}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;color:var(--text);background:#f7f7f8}
+  .wrap{max-width:1200px;margin:0 auto;padding:18px}
+  h1{font-size:1.6rem;margin:0 0 .3rem;font-weight:800}
+  h2{font-size:1.1rem;margin:0 0 .5rem}
+  .panel{background:#fff;border:1px solid var(--ring);border-radius:18px;padding:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width: 980px){.grid{grid-template-columns:1fr}}
+  label{font-size:.92rem;color:#334155}
+  input[type="number"],input[type="text"],input[type="color"],textarea,select{
+    width:100%;border:1px solid var(--ring);border-radius:10px;padding:.5rem .6rem;background:#fff;font:inherit
+  }
+  input[type="checkbox"]{transform:translateY(1px)}
+  button{border:0;border-radius:10px;padding:.58rem .9rem;font-weight:700;background:#111827;color:#fff;cursor:pointer}
+  button.secondary{background:#fff;color:#111827;border:1px solid var(--ring)}
+  button.blue{background:var(--accent)}
+  .hint{font-size:.86rem;color:var(--muted)}
+  .muted{color:var(--muted)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:.5rem}
+  .card{background:#fff;border:1px solid var(--ring);border-radius:16px;padding:10px}
+  .scroller{overflow:auto}
+
+  /* Builder (contenteditable) */
+  table.builder{border-collapse:separate;border-spacing:0;width:100%}
+  .builder th,.builder td{border:1px dashed #e2e8f0;padding:.5rem .6rem;min-width:120px}
+  .builder thead th{background:#f1f5f9}
+  .builder tbody th{background:#eef6ff}
+  .builder td{background:#fafafa}
+  [contenteditable]{outline:2px solid transparent}
+  [contenteditable]:focus{outline:2px solid #93c5fd;background:#fff}
+
+  /* Preview/Export styles */
+  .hpt-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+  .hpt{width:100%;min-width:720px;border-collapse:separate;border-spacing:0}
+  .hpt caption{caption-side:top;text-align:left;font-weight:800;margin:0 0 .6rem}
+  .hpt th,.hpt td{padding:.85rem .9rem;border:1px solid #e5e7eb;background:#fff;text-align:left}
+  .hpt thead th{background:#f8fafc;font-weight:800}
+  .hpt .plan{font-weight:800;background:var(--accent-weak)}
+  .hpt .price{font-weight:800}
+  .hpt .cta a{display:inline-block;padding:.5rem .8rem;border-radius:10px;background:var(--accent);color:#fff;text-decoration:none;font-weight:700}
+  .hpt .cta a:hover{filter:brightness(.95)}
+  .note{font-size:.82rem;color:#64748b}
+
+  /* Stack to cards (each plan becomes a card) */
+  @media (max-width: 760px){
+    .hpt.stack{min-width:0;border-spacing:0}
+    .hpt.stack thead{display:none}
+    .hpt.stack tbody tr{display:block;margin:0 0 .8rem;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
+    .hpt.stack tbody td,.hpt.stack tbody th{
+      display:grid;grid-template-columns:12ch auto;border:none;border-bottom:1px solid #f1f5f9
+    }
+    .hpt.stack tbody tr > *:last-child{border-bottom:0}
+    .hpt.stack tbody th.plan{grid-template-columns:auto;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+    .hpt.stack [data-label]::before{content:attr(data-label);font-weight:700;color:#334155;padding-right:.8rem}
+    .hpt.stack .cta{display:flex}
+    .hpt.stack .cta::before{content:''}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Responsive Horizontal Pricing Table Generator — <em>Plans as Rows</em></h1>
+  <p class="muted">For VPS pricing: each <b>row is a plan</b>. Columns are features, <b>Price</b>, and optional <b>Button</b>. Live preview → <b>Generate HTML</b> → paste into WordPress (Custom HTML block/widget).</p>
+
+  <div class="grid">
+    <!-- LEFT: Builder -->
+    <section class="panel">
+      <h2>1) Builder</h2>
+      <div class="toolbar" style="margin-bottom:.5rem">
+        <div>
+          <label>Plans (rows)</label>
+          <input type="number" id="plans" min="2" value="4">
+        </div>
+        <div>
+          <label>Feature columns (besides Plan + Price)</label>
+          <input type="number" id="features" min="2" value="4">
+        </div>
+        <div>
+          <label>Currency</label>
+          <select id="currency"><option>$</option><option>£</option><option>€</option><option>₹</option><option>CAD$</option><option>AUD$</option></select>
+        </div>
+        <div>
+          <label>Accent</label>
+          <input type="color" id="accent" value="#2563eb">
+        </div>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:.5rem">
+        <label><input type="checkbox" id="stack" checked> Stack to cards on mobile</label>
+        <label><input type="checkbox" id="ctaCol" checked> Add Button as last column</label>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:.5rem">
+        <div style="flex:1">
+          <label>Caption (optional)</label>
+          <input id="caption" type="text" placeholder="VPS Plans — billed monthly">
+        </div>
+        <div style="width:180px">
+          <label>Billing period</label>
+          <input id="period" type="text" value="/mo">
+        </div>
+      </div>
+
+      <p class="hint">Edit any header or cell. First column = Plan name. Last column (if enabled) becomes button. Click <b>Buttons</b> below to set text/URL per plan.</p>
+
+      <div class="card scroller" id="builderHolder"></div>
+
+      <details style="margin-top:.6rem">
+        <summary class="hint">Buttons (text + URL) per plan</summary>
+        <div id="btnConfig" class="toolbar" style="gap:.75rem;margin-top:.6rem"></div>
+      </details>
+    </section>
+
+    <!-- RIGHT: Preview & Output -->
+    <section class="panel">
+      <h2>2) Preview</h2>
+      <div class="card">
+        <div id="preview" class="hpt-wrap"></div>
+      </div>
+
+      <h2 style="margin-top:12px">3) Generate → WordPress HTML</h2>
+      <div class="toolbar" style="margin-bottom:.5rem">
+        <button class="blue" id="generate">Generate HTML</button>
+        <button class="secondary" id="copy" disabled>Copy</button>
+        <span id="copied" class="hint"></span>
+      </div>
+      <textarea id="output" style="width:100%;min-height:220px;font-family:ui-monospace,Menlo,monospace"></textarea>
+      <p class="note" style="margin-top:.4rem">Paste this into a <b>Custom HTML</b> block/widget. CSS is scoped to a unique table ID.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ===== Helpers ===== */
+const $ = s => document.querySelector(s);
+const esc = s => (s??'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const uid = ()=>'hpt-'+Math.random().toString(36).slice(2,8);
+function mix(hex, w=.86){ // mix with white
+  const n=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const [r,g,b]=n(hex); const m=v=>Math.round(v+(255-v)*w);
+  return `#${[m(r),m(g),m(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
+}
+
+/* ===== State ===== */
+let R = +$('#plans').value;         // plans (rows)
+let F = +$('#features').value;      // feature columns (besides Price)
+let headers = ['Plan','vCPU','RAM','Storage','Bandwidth'].slice(0,F); // feature names (editable)
+let includeCTA = true;
+let table = [];                     // matrix R x (F + 2 [Plan, Price] + CTA?)
+let buttons = [];                   // per plan {text,url}
+let uniqueId = uid();
+
+/* ===== Init ===== */
+function init(){
+  table = Array.from({length:R}, (_,r)=> {
+    const row = Array.from({length:F + 2}, ()=> ''); // [Plan] + F features + [Price]
+    row[0] = ['Nano','Micro','Standard','Pro','Ultra'][r] || `Plan ${r+1}`;
+    return row;
+  });
+  buttons = Array.from({length:R}, ()=>({text:'Choose Plan', url:'#'}));
+}
+init();
+
+/* ===== Builder ===== */
+function renderBuilder(){
+  const t = document.createElement('table'); t.className='builder';
+  const thead = document.createElement('thead'); const tbody = document.createElement('tbody');
+
+  // header row (Plan + feature headers + Price + optional Button col)
+  const hr = document.createElement('tr');
+  // Plan header (fixed label but editable content to rename)
+  const thPlan = document.createElement('th');
+  thPlan.contentEditable = true; thPlan.textContent = headers[0] || 'Plan';
+  thPlan.dataset.h = 0; addHeaderEvents(thPlan);
+  hr.appendChild(thPlan);
+
+  for(let c=1;c<=F;c++){
+    const th = document.createElement('th');
+    th.contentEditable = true; th.textContent = headers[c] || ['vCPU','RAM','Storage','Bandwidth','IPv4','Port'][c-1] || `Feature ${c}`;
+    th.dataset.h = c; addHeaderEvents(th);
+    hr.appendChild(th);
+  }
+
+  const thPrice = document.createElement('th');
+  thPrice.contentEditable = true; thPrice.textContent = 'Price';
+  thPrice.dataset.h = F+1; addHeaderEvents(thPrice);
+  hr.appendChild(thPrice);
+
+  if($('#ctaCol').checked){
+    const thBtn = document.createElement('th'); thBtn.textContent = 'Button';
+    hr.appendChild(thBtn);
+  }
+  thead.appendChild(hr);
+
+  // body rows (plans)
+  for(let r=0;r<R;r++){
+    const tr = document.createElement('tr');
+
+    for(let c=0;c<F+2;c++){
+      const cellTag = (c===0) ? 'th' : 'td';
+      const cell = document.createElement(cellTag);
+      if(c===0) cell.className='plan';
+      cell.contentEditable = true;
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.textContent = table[r][c] || '';
+      addCellEvents(cell);
+      tr.appendChild(cell);
+    }
+
+    if($('#ctaCol').checked){
+      const td = document.createElement('td'); td.textContent = '— (button set below)';
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+
+  t.appendChild(thead); t.appendChild(tbody);
+  $('#builderHolder').innerHTML = ''; $('#builderHolder').appendChild(t);
+
+  renderBtnConfig();
+}
+
+/* Header edit */
+function addHeaderEvents(th){
+  th.addEventListener('input', ()=>{
+    const i = +th.dataset.h;
+    headers[i] = th.textContent;
+    renderPreview();
+  });
+}
+
+/* Cell edit */
+function addCellEvents(cell){
+  cell.addEventListener('input', ()=>{
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    table[r][c] = cell.textContent;
+    renderPreview();
+  });
+}
+
+/* Buttons config */
+function renderBtnConfig(){
+  const box = $('#btnConfig'); box.innerHTML='';
+  for(let r=0;r<R;r++){
+    const wrap = document.createElement('div'); wrap.style.flex='1 1 280px';
+    wrap.innerHTML = `
+      <div class="card">
+        <strong>${esc(table[r][0] || 'Plan '+(r+1))}</strong>
+        <div class="hint" style="margin:.35rem 0 .2rem">Button text</div>
+        <input type="text" data-btnt="${r}" value="${buttons[r].text}">
+        <div class="hint" style="margin:.35rem 0 .2rem">Button URL</div>
+        <input type="text" data-btnu="${r}" value="${buttons[r].url}">
+      </div>`;
+    box.appendChild(wrap);
+  }
+  box.querySelectorAll('input[data-btnt]').forEach(i=> i.oninput = ()=>{ buttons[+i.dataset.btnt].text = i.value; renderPreview(); });
+  box.querySelectorAll('input[data-btnu]').forEach(i=> i.oninput = ()=>{ buttons[+i.dataset.btnu].url  = i.value; });
+}
+
+/* ===== Preview ===== */
+function renderPreview(){
+  const wrap = document.createElement('div'); wrap.className='hpt-wrap';
+  const t = document.createElement('table'); t.className='hpt'; t.id = uniqueId;
+  if($('#stack').checked) t.classList.add('stack');
+
+  const accent = $('#accent').value; t.style.setProperty('--accent', accent); t.style.setProperty('--accent-weak', mix(accent,.9));
+  // caption
+  const capText = $('#caption').value.trim();
+  if(capText){ const cap=document.createElement('caption'); cap.textContent=capText; t.appendChild(cap); }
+
+  // header
+  const thead = document.createElement('thead'); const hr = document.createElement('tr');
+  const labels = [headers[0]||'Plan', ...headers.slice(1, F+1), 'Price'];
+  labels.forEach(lbl => { const th=document.createElement('th'); th.textContent = lbl; hr.appendChild(th); });
+  if($('#ctaCol').checked){ const th=document.createElement('th'); th.textContent=''; hr.appendChild(th); }
+  thead.appendChild(hr); t.appendChild(thead);
+
+  // body
+  const tbody = document.createElement('tbody');
+  for(let r=0;r<R;r++){
+    const tr = document.createElement('tr');
+
+    // plan name
+    const th = document.createElement('th'); th.className='plan'; th.textContent = table[r][0]||'';
+    if($('#stack').checked) th.setAttribute('data-label',''); // title row
+    tr.appendChild(th);
+
+    // features
+    for(let c=1;c<=F;c++){
+      const td=document.createElement('td'); td.textContent = table[r][c]||'';
+      if($('#stack').checked) td.setAttribute('data-label', headers[c] || `Feature ${c}`);
+      tr.appendChild(td);
+    }
+
+    // price
+    const priceTd = document.createElement('td');
+    priceTd.innerHTML = `<span class="price">${esc($('#currency').value)}${esc(table[r][F+1]||'0')}</span> <span class="muted">${esc($('#period').value||'')}</span>`;
+    if($('#stack').checked) priceTd.setAttribute('data-label','Price');
+    tr.appendChild(priceTd);
+
+    // button
+    if($('#ctaCol').checked){
+      const td = document.createElement('td'); td.className='cta';
+      const {text,url}=buttons[r];
+      td.innerHTML = `<a href="${esc(url)}" rel="nofollow">${esc(text)}</a>`;
+      tr.appendChild(td);
+    }
+
+    tbody.appendChild(tr);
+  }
+  t.appendChild(tbody);
+  wrap.appendChild(t);
+  $('#preview').innerHTML=''; $('#preview').appendChild(wrap);
+}
+
+/* ===== Generate HTML (scoped) ===== */
+function generateHTML(){
+  const id = uniqueId = uid();
+  const accent = $('#accent').value, weak = mix(accent,.9);
+  const stack = $('#stack').checked, caption = $('#caption').value.trim();
+  const cur = $('#currency').value, per = $('#period').value.trim();
+  const hasBtn = $('#ctaCol').checked;
+
+  let css = `
+<style>
+#${id}{--accent:${accent};--accent-weak:${weak};width:100%;min-width:720px;border-collapse:separate;border-spacing:0}
+#${id} caption{caption-side:top;text-align:left;font-weight:800;margin:0 0 .6rem}
+#${id} th,#${id} td{padding:.85rem .9rem;border:1px solid #e5e7eb;background:#fff;text-align:left}
+#${id} thead th{background:#f8fafc;font-weight:800}
+#${id} .plan{font-weight:800;background:var(--accent-weak)}
+#${id} .price{font-weight:800}
+#${id} .cta a{display:inline-block;padding:.5rem .8rem;border-radius:10px;background:var(--accent);color:#fff;text-decoration:none;font-weight:700}
+@media(max-width:760px){
+  ${stack ? `
+  #${id}{min-width:0;border-spacing:0}
+  #${id} thead{display:none}
+  #${id} tbody tr{display:block;margin:0 0 .8rem;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
+  #${id} tbody td,#${id} tbody th{display:grid;grid-template-columns:12ch auto;border:none;border-bottom:1px solid #f1f5f9}
+  #${id} tbody tr>*:last-child{border-bottom:0}
+  #${id} .plan{grid-template-columns:auto;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+  #${id} [data-label]::before{content:attr(data-label);font-weight:700;color:#334155;padding-right:.8rem}
+  ` : ''}
+}
+</style>`.trim();
+
+  // header labels
+  const labels = [headers[0]||'Plan', ...headers.slice(1, F+1), 'Price', ...(hasBtn?['']:[])];
+  let html = `<div class="hpt-wrap"><table id="${id}" class="hpt${stack?' stack':''}">`;
+  if(caption) html += `\n  <caption>${esc(caption)}</caption>`;
+  html += `\n  <thead>\n    <tr>`;
+  labels.forEach(l => html += `\n      <th>${esc(l)}</th>`);
+  html += `\n    </tr>\n  </thead>\n  <tbody>`;
+
+  for(let r=0;r<R;r++){
+    html += `\n    <tr>`;
+    // plan
+    html += `\n      <th class="plan">${esc(table[r][0]||'')}</th>`;
+    // features
+    for(let c=1;c<=F;c++){
+      html += `\n      <td${stack?` data-label="${esc(headers[c]||'Feature '+c)}"`:''}>${esc(table[r][c]||'')}</td>`;
+    }
+    // price
+    const price = esc(table[r][F+1]||'0');
+    html += `\n      <td${stack?' data-label="Price"':''}><span class="price">${esc(cur)}${price}</span> <span class="muted">${esc(per)}</span></td>`;
+    // button
+    if(hasBtn){
+      const {text,url}=buttons[r];
+      html += `\n      <td class="cta"><a href="${esc(url)}" rel="nofollow">${esc(text)}</a></td>`;
+    }
+    html += `\n    </tr>`;
+  }
+  html += `\n  </tbody>\n</table></div>`;
+
+  $('#output').value = css + '\n' + html;
+  $('#copy').disabled = false;
+}
+
+/* ===== Events ===== */
+$('#plans').onchange = e=>{
+  R = Math.max(2, +e.target.value||2);
+  // resize rows
+  if(table.length<R){
+    for(let i=table.length;i<R;i++){
+      table.push(Array.from({length:F+2},()=>'')); table[i][0] = `Plan ${i+1}`;
+      buttons.push({text:'Choose Plan', url:'#'});
+    }
+  } else { table.length = R; buttons.length = R; }
+  renderBuilder(); renderPreview();
+};
+$('#features').onchange = e=>{
+  F = Math.max(2, +e.target.value||2);
+  // resize columns (Plan + F features + Price)
+  table = table.map(row=>{
+    const need = F+2;
+    if(row.length<need) return row.concat(Array.from({length:need-row.length},()=>'')); 
+    return row.slice(0,need);
+  });
+  // headers: ensure length F+1 (Plan + F features)
+  if(headers.length<F+1){
+    for(let i=headers.length;i<F+1;i++) headers[i] = `Feature ${i}`;
+  } else headers.length = F+1;
+  renderBuilder(); renderPreview();
+};
+$('#caption').oninput = renderPreview;
+$('#currency').oninput = renderPreview;
+$('#period').oninput   = renderPreview;
+$('#accent').oninput   = renderPreview;
+$('#stack').oninput    = renderPreview;
+$('#ctaCol').oninput   = ()=>{ includeCTA = $('#ctaCol').checked; renderBuilder(); renderPreview(); };
+
+$('#generate').onclick = generateHTML;
+$('#copy').onclick = async ()=>{
+  try{ await navigator.clipboard.writeText($('#output').value); $('#copied').textContent='Copied ✔'; setTimeout(()=>$('#copied').textContent='',1400); }
+  catch{ $('#copied').textContent='Press Ctrl/Cmd + C'; }
+};
+
+/* ===== First render ===== */
+renderBuilder(); renderPreview();
+</script>
+</body>
+</html>
