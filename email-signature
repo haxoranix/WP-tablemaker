@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Responsive Email Signature Builder</title>
+<style>
+  :root {
+    --ui-bg: #0f172a;
+    --ui-card: #111827;
+    --ui-soft: #1f2937;
+    --ui-text: #e5e7eb;
+    --ui-sub: #94a3b8;
+    --accent: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #1f2937 0, #0b1020 50%, #050812 100%);
+    color: var(--ui-text);
+  }
+  .wrap {
+    display: grid; gap: 20px; padding: 24px; max-width: 1200px; margin: 0 auto;
+    grid-template-columns: 380px 1fr;
+  }
+  @media (max-width: 980px){ .wrap{ grid-template-columns: 1fr; } }
+  .card {
+    background: color-mix(in srgb, var(--ui-card) 92%, #ffffff 8%);
+    border: 1px solid #0b1327; border-radius: 14px; padding: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  h1 { font-size: 22px; margin: 0 0 8px; letter-spacing: .2px; }
+  .sub { color: var(--ui-sub); font-size: 13px; margin-bottom: 14px; }
+  label { display:block; font-size: 12px; color: var(--ui-sub); margin: 14px 0 6px; }
+  input[type="text"], input[type="email"], input[type="tel"], input[type="url"], textarea, select {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #27324a; background: #0b1320; color: #e5e7eb;
+    outline: none; box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  textarea{ resize: vertical; min-height: 60px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions { display:flex; flex-wrap: wrap; gap:10px; margin-top: 12px; }
+  button, .ghost {
+    appearance:none; border:1px solid #27406a; padding:10px 14px; border-radius: 10px; cursor:pointer;
+    background: linear-gradient(180deg, #1b2a44, #121b2b); color:#eaf2ff; font-weight: 600;
+  }
+  .ghost{ background: transparent; color:#cbd5e1; }
+  button:active{ transform: translateY(1px); }
+  .previews { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  @media (max-width: 980px){ .previews{ grid-template-columns: 1fr; } }
+  .viewport {
+    background: #0a0f1b; border:1px dashed #243249; border-radius:12px; padding:12px; position:relative;
+  }
+  .viewport h3 { font-size: 13px; color: var(--ui-sub); margin:0 0 6px; }
+  .frame {
+    background:white; color:black; border-radius:10px; padding:16px; overflow:auto;
+    box-shadow: inset 0 0 0 1px #e5e7eb;
+  }
+  .frame.desktop { width: 600px; }
+  .frame.mobile { width: 360px; }
+  .code {
+    width: 100%; min-height: 220px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    color: #e5e7eb; background: #0b1320; border:1px solid #27324a; border-radius:10px; padding:12px; white-space: pre; overflow: auto;
+  }
+  .muted { color:#94a3b8; font-size:12px; }
+  .inline-help{ font-size:12px; color:#a8c1ff; margin-top:6px; }
+  .logo-drop {
+    border: 1px dashed #2c3e66; border-radius: 10px; padding: 12px; text-align: center; color: #9db5db; cursor: pointer;
+  }
+  .logo-drop input { display:none; }
+  .tiny { font-size: 11px; color:#9aa9c7; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Left: Form -->
+    <section class="card">
+      <h1>Responsive Email Signature Builder</h1>
+      <div class="sub">Enter your details, upload a logo, preview, then copy the HTML signature.</div>
+
+      <div class="row">
+        <div>
+          <label for="name">Full name</label>
+          <input id="name" type="text" placeholder="Alex Doe" value="Alex Doe" />
+        </div>
+        <div>
+          <label for="title">Title</label>
+          <input id="title" type="text" placeholder="Head of Something" value="Head of Growth" />
+        </div>
+      </div>
+
+      <label for="company">Company</label>
+      <input id="company" type="text" placeholder="Company LLC" value="Acme Co." />
+
+      <div class="row">
+        <div>
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="alex@acme.com" value="alex@acme.com" />
+        </div>
+        <div>
+          <label for="phone">Phone</label>
+          <input id="phone" type="tel" placeholder="+1 (555) 555-5555" value="+1 (555) 123-4567" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="website">Website (optional)</label>
+          <input id="website" type="url" placeholder="https://acme.com" value="https://acme.com" />
+        </div>
+        <div>
+          <label for="address">Address (optional)</label>
+          <input id="address" type="text" placeholder="123 Main St, City" />
+        </div>
+      </div>
+
+      <label>Brand color (links / accent)</label>
+      <input id="color" type="text" value="#0B5FFF" />
+
+      <label>Logo</label>
+      <div class="logo-drop" id="logoDrop">
+        <input id="logoInput" type="file" accept="image/*" />
+        <div><strong>Click to upload</strong> or drop an image here (PNG/SVG/JPG).<br/><span class="tiny">Recommended width: 140–200px</span></div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="logoWidth">Logo width (px)</label>
+          <input id="logoWidth" type="text" value="160" />
+        </div>
+        <div>
+          <label for="lineHeight">Text line-height</label>
+          <select id="lineHeight">
+            <option value="1.25">1.25</option>
+            <option value="1.35" selected>1.35</option>
+            <option value="1.5">1.5</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="refresh">Refresh Preview</button>
+        <button id="copy">Copy HTML</button>
+        <button id="download">Download .html</button>
+        <button id="reset" class="ghost">Reset</button>
+      </div>
+      <div class="inline-help">After copying, paste the HTML into your email client’s signature editor (Outlook: use “Insert HTML”/“New signature” paste; Gmail: ⚙️ → See all settings → General → Signature → Create new → paste).</div>
+    </section>
+
+    <!-- Right: Preview + Code -->
+    <section class="card">
+      <h2 style="font-size:16px; margin:0 0 10px;">Preview</h2>
+      <div class="previews">
+        <div class="viewport">
+          <h3>Desktop width (600px)</h3>
+          <div class="frame desktop" id="desktopPreview"></div>
+        </div>
+        <div class="viewport">
+          <h3>Mobile width (360px)</h3>
+          <div class="frame mobile" id="mobilePreview"></div>
+        </div>
+      </div>
+
+      <h2 style="font-size:16px; margin:16px 0 8px;">Generated HTML</h2>
+      <textarea id="output" class="code" readonly></textarea>
+      <div class="muted">This HTML uses a <em>table</em>-based layout, inline styles, web-safe fonts, and fixed image width — all friendly to Outlook, Gmail, Apple Mail, and most major clients.</div>
+    </section>
+  </div>
+
+<script>
+(function(){
+  const $ = (sel) => document.querySelector(sel);
+  const escapeHtml = (s) => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  let logoDataUrl = "";
+  const defaults = {
+    name: $("#name").value, title: $("#title").value, company: $("#company").value,
+    email: $("#email").value, phone: $("#phone").value, website: $("#website").value,
+    address: $("#address").value, color: $("#color").value, logoWidth: $("#logoWidth").value
+  };
+
+  // Logo upload / drag-drop
+  const logoInput = $("#logoInput");
+  const logoDrop = $("#logoDrop");
+  const readFileAsDataURL = (file) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+
+  const acceptFile = async (file) => {
+    if (!file) return;
+    const url = await readFileAsDataURL(file);
+    logoDataUrl = url;
+    logoDrop.innerHTML = `<img src="${url}" style="max-width:100%; height:auto; display:block; margin: 4px auto 6px;" alt="Logo preview"/><div class="tiny">Embedded as data URI</div>`;
+    render();
+  };
+
+  logoInput.addEventListener("change", e => acceptFile(e.target.files[0]));
+  logoDrop.addEventListener("click", ()=> logoInput.click());
+  ["dragenter","dragover"].forEach(evt => logoDrop.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation(); logoDrop.style.background = "#0d1530";
+  }));
+  ["dragleave","drop"].forEach(evt => logoDrop.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation(); logoDrop.style.background = "transparent";
+  }));
+  logoDrop.addEventListener("drop", e => acceptFile(e.dataTransfer.files[0]));
+
+  function field(id){ return ( $(id).value || "" ).trim(); }
+
+  function buildSignatureHTML(data){
+    // Basic sanitization
+    const name = escapeHtml(data.name);
+    const title = escapeHtml(data.title);
+    const company = escapeHtml(data.company);
+    const email = escapeHtml(data.email);
+    const phone = escapeHtml(data.phone);
+    const website = escapeHtml(data.website);
+    const address = escapeHtml(data.address);
+    const color = data.color;
+    const logoWidth = parseInt(data.logoWidth, 10) || 160;
+    const lh = parseFloat(data.lineHeight) || 1.35;
+
+    const hasLogo = !!data.logo;
+    const hasCompany = !!company;
+    const hasWebsite = !!website;
+    const hasAddress = !!address;
+
+    const safeLink = (href, text) => href ? `<a href="${href}" style="color:${color}; text-decoration:none;" target="_blank" rel="noopener">${text}</a>` : text;
+
+    // Email-safe table layout with inline styles
+    // Media query is included for clients that support it; ignored by Outlook desktop.
+    const styleBlock = `
+<!-- Optional mobile stacking for supported clients -->
+<style type="text/css">
+@media only screen and (max-width:480px){
+  .sig-stack, .sig-stack td { display:block !important; width:100% !important; }
+  .sig-spacer { height:12px !important; line-height:12px !important; }
+  .sig-left, .sig-right { padding:0 !important; }
+}
+</style>`.trim();
+
+    const logoCell = hasLogo ? `
+  <td class="sig-left" style="vertical-align:top; padding:0 16px 0 0;">
+    <img src="${data.logo}" width="${logoWidth}" style="display:block; width:${logoWidth}px; max-width:100%; height:auto; border:0; outline:none; text-decoration:none;" alt="${company || 'Logo'}" />
+  </td>` : "";
+
+    const nameTitle = `
+      <span style="font:600 16px/1.2 Arial, Helvetica, sans-serif; color:#111111;">${name}</span><br/>
+      <span style="font:400 13px/${lh} Arial, Helvetica, sans-serif; color:#555555;">${title}${hasCompany ? (title && company ? " · " : "") + company : ""}</span>`;
+
+    const contactLines = `
+      <div style="font:400 12px/${lh} Arial, Helvetica, sans-serif; color:#444444; margin-top:6px;">
+        ${email ? `<div>Email: <a href="mailto:${email}" style="color:${color}; text-decoration:none;">${email}</a></div>` : ``}
+        ${phone ? `<div>Phone: <a href="tel:${phone.replace(/[^+\d]/g,'')}" style="color:${color}; text-decoration:none;">${phone}</a></div>` : ``}
+        ${hasWebsite ? `<div>Web: ${safeLink(website, website.replace(/^https?:\/\//i,'').replace(/\/$/,''))}</div>` : ``}
+        ${hasAddress ? `<div>${address}</div>` : ``}
+      </div>`;
+
+    const divider = `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+        <tr><td style="height:10px; line-height:10px; font-size:0;">&nbsp;</td></tr>
+        <tr><td style="width:48px; height:2px; background:${color}; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <tr><td style="height:10px; line-height:10px; font-size:0;">&nbsp;</td></tr>
+      </table>`;
+
+    const rightCell = `
+  <td class="sig-right" style="vertical-align:top; padding:0;">
+    ${nameTitle}
+    ${divider}
+    ${contactLines}
+  </td>`;
+
+    const table = `
+${styleBlock}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; font-family: Arial, Helvetica, sans-serif;">
+  <tr class="sig-stack">
+    ${logoCell}
+    ${rightCell}
+  </tr>
+</table>`.trim();
+
+    return table;
+  }
+
+  function gather() {
+    return {
+      name: field("#name"), title: field("#title"), company: field("#company"),
+      email: field("#email"), phone: field("#phone"), website: field("#website"),
+      address: field("#address"), color: field("#color"), logoWidth: field("#logoWidth"),
+      lineHeight: field("#lineHeight"),
+      logo: logoDataUrl
+    };
+  }
+
+  function render(){
+    const data = gather();
+    const html = buildSignatureHTML(data);
+    $("#output").value = html;
+
+    // Render previews inside pseudo “emails”
+    const shell = (inner) => `
+      <div style="font:14px/1.5 Arial, Helvetica, sans-serif; color:#111; max-width:100%;">
+        <div style="padding:8px; border:1px solid #e5e7eb; border-radius:8px;">
+          ${inner}
+        </div>
+      </div>`;
+    $("#desktopPreview").innerHTML = shell(html);
+    $("#mobilePreview").innerHTML = shell(html);
+  }
+
+  // Copy, download, reset, refresh
+  $("#copy").addEventListener("click", async () => {
+    const text = $("#output").value;
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Signature HTML copied to clipboard!");
+    } catch {
+      // Fallback: select text
+      $("#output").focus(); $("#output").select();
+      document.execCommand("copy");
+      alert("Copied (fallback).");
+    }
+  });
+
+  $("#download").addEventListener("click", () => {
+    const blob = new Blob([$("#output").value], {type: "text/html;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "email-signature.html";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $("#reset").addEventListener("click", () => {
+    Object.entries(defaults).forEach(([k,v]) => { const el = $("#"+k); if (el) el.value = v; });
+    $("#address").value = "";
+    $("#lineHeight").value = "1.35";
+    $("#logoWidth").value = "160";
+    logoDataUrl = "";
+    $("#logoDrop").innerHTML = `
+      <input id="logoInput" type="file" accept="image/*" />
+      <div><strong>Click to upload</strong> or drop an image here (PNG/SVG/JPG).<br/><span class="tiny">Recommended width: 140–200px</span></div>`;
+    // re-bind input after reset HTML
+    document.querySelector("#logoDrop #logoInput").addEventListener("change", e => acceptFile(e.target.files[0]));
+    render();
+  });
+
+  $("#refresh").addEventListener("click", render);
+  ["#name","#title","#company","#email","#phone","#website","#address","#color","#logoWidth","#lineHeight"]
+    .forEach(id => $(id).addEventListener("input", render));
+
+  // Initial render
+  render();
+})();
+</script>
+</body>
+</html>
