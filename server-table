@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Horizontal VPS Pricing (Plans = Rows) — Responsive + Mobile Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --font: Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
+    --fs: 16px;
+    --radius: 12px;
+
+    --header-bg:#294b7a; --header-fg:#fff;  /* table header row */
+    --stripe:#f6f7f9; --border:#e5e7eb;
+    --price:#111827; --sub:#9b1c1c;
+    --btn-bg:#2337c6; --btn-bg-h:#1c2ea8; --btn-fg:#fff;
+    --plan-bg:#f0f3ff; /* first column tint on desktop */
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:#f7f7f8;color:#0f172a;font:var(--fs)/1.45 var(--font)}
+  .wrap{max-width:1200px;margin:0 auto;padding:18px}
+  h1{margin:0 0 .35rem;font-weight:800;font-size:clamp(1.25rem,2vw,1.6rem)}
+  h2{margin:.8rem 0 .5rem;font-size:1.05rem}
+  .panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:960px){.grid{grid-template-columns:1fr}}
+  .toolbar{display:flex;flex-wrap:wrap;gap:.6rem}
+  label{font-size:.92rem;color:#334155}
+  input,select{border:1px solid var(--border);border-radius:10px;padding:.45rem .6rem;background:#fff;font:inherit}
+  input[type="color"]{padding:.25rem}
+  input[type="number"]{width:110px}
+  input[type="text"]{width:100%}
+  button{border:0;border-radius:10px;padding:.58rem .9rem;font-weight:700;background:#111827;color:#fff;cursor:pointer}
+  button.secondary{background:#fff;color:#111827;border:1px solid var(--border)}
+  button.primary{background:#294b7a}
+  .hint{font-size:.86rem;color:#64748b}
+  .card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:10px}
+  .scroller{overflow:auto}
+
+  /* ===== BUILDER ===== */
+  table.builder{border-collapse:separate;border-spacing:0;width:100%;min-width:880px}
+  .builder th,.builder td{border:1px dashed #e2e8f0;padding:.5rem .6rem;min-width:150px;background:#fafafa;vertical-align:top}
+  .builder thead th{background:#f1f5f9}
+  .builder tbody th{background:#f3f0ff;font-weight:800}
+  [contenteditable]{outline:2px solid transparent}
+  [contenteditable]:focus{outline:2px solid #93c5fd;background:#fff}
+
+  /* ===== PREVIEW / EXPORT ===== */
+  .pt-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+  .pt{width:100%;border-collapse:separate;border-spacing:0;min-width:960px;font:var(--fs)/1.45 var(--font)}
+  .pt caption{caption-side:top;text-align:left;font-weight:800;margin:0 0 .6rem}
+  .pt th,.pt td{padding:1rem;border:1px solid var(--border);background:#fff;text-align:left;vertical-align:middle}
+  .pt thead th{background:var(--header-bg);color:var(--header-fg);font-weight:800}
+  .pt tbody tr:nth-child(odd) td,.pt tbody tr:nth-child(odd) th{background:var(--stripe)}
+  .pt .plan{font-weight:800;background:var(--plan-bg)}
+  .pt .price{color:var(--price);font-weight:800}
+  .pt .period{margin-top:.15rem;color:#667085}
+  .pt .sub{display:block;margin-top:.2rem;color:var(--sub);font-size:.86em;font-weight:600}
+  .pt .cta{text-align:right}
+  .pt .cta a{display:inline-block;background:var(--btn-bg);color:var(--btn-fg);text-decoration:none;font-weight:800;border-radius:var(--radius);padding:.6rem 1rem}
+  .pt .cta a:hover{background:var(--btn-bg-h)}
+  /* rounded corners */
+  .pt thead th:first-child{border-top-left-radius:var(--radius)}
+  .pt thead th:last-child{border-top-right-radius:var(--radius)}
+  .pt tbody tr:last-child td:first-child{border-bottom-left-radius:var(--radius)}
+  .pt tbody tr:last-child td:last-child{border-bottom-right-radius:var(--radius)}
+
+  /* ===== Stack-to-cards (ONLY ≤ 860px when toggle is ON) ===== */
+  @media (max-width: 860px){
+    .pt-wrap.stack .pt{min-width:0;border-spacing:0}
+    .pt-wrap.stack .pt thead{display:none}
+    .pt-wrap.stack .pt tbody tr{display:block;margin:0 0 .9rem;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .pt-wrap.stack .pt tbody th,
+    .pt-wrap.stack .pt tbody td{display:grid;grid-template-columns:12ch auto;border:none;border-bottom:1px solid #f1f5f9}
+
+    /* Force all cells white in card mode, then paint the plan header. */
+    .pt-wrap.stack .pt tbody th,
+    .pt-wrap.stack .pt tbody td { background:#fff !important; }
+    .pt-wrap.stack .pt tbody th.plan{
+      background:var(--header-bg) !important;
+      color:var(--header-fg) !important;
+      grid-template-columns:auto; /* header title full width */
+      border-bottom:1px solid var(--border);
+    }
+    .pt-wrap.stack .pt tbody th.plan *{ color:inherit !important; }
+
+    .pt-wrap.stack .pt tbody tr>*:last-child{border-bottom:0}
+    .pt-wrap.stack .pt [data-label]::before{content:attr(data-label);font-weight:700;color:#334155;padding-right:.8rem}
+    .pt-wrap.stack .pt .cta{grid-template-columns:auto;padding:0}
+    .pt-wrap.stack .pt .cta::before{content:''}
+    .pt-wrap.stack .pt .cta a{width:100%;border-radius:0 0 var(--radius) var(--radius);text-align:center}
+  }
+
+  /* small screens (no stacking) keep horizontal scroll */
+  @media (max-width:760px){
+    .pt{min-width:720px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Horizontal VPS Pricing (Plans = Rows)</h1>
+  <p class="hint">Type directly in the cells. Use <b>Shift+Enter</b> for a smaller colored sub-line (e.g., “12 Cores / 24 Threads”).</p>
+
+  <div class="grid">
+    <!-- BUILDER -->
+    <section class="panel">
+      <h2>1) Table Builder</h2>
+      <div class="toolbar">
+        <div><label>Plans (rows)<br><input type="number" id="plans" min="2" value="5"></label></div>
+        <div><label>Feature columns (besides Price & Action)<br><input type="number" id="features" min="2" value="4"></label></div>
+        <div style="flex:1"><label>Caption (optional)<br><input id="caption" type="text" placeholder="Dedicated Server Hosting Plans in India"></label></div>
+        <div><label>Currency<br><select id="currency"><option>$</option><option>£</option><option>€</option><option>₹</option><option>CAD$</option><option>AUD$</option></select></label></div>
+        <div><label>Billing period<br><input id="period" type="text" value="Monthly"></label></div>
+      </div>
+
+      <div class="toolbar" style="margin-top:.4rem">
+        <label><input type="checkbox" id="stackToggle"> Stack to cards on mobile (≤ 860px)</label>
+        <div style="min-width:220px">
+          <label>Font family<br>
+            <select id="font">
+              <option value='Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif'>Inter</option>
+              <option value='Poppins,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif'>Poppins</option>
+              <option value='system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif'>System UI</option>
+            </select>
+          </label>
+        </div>
+        <div><label>Base size (px)<br><input type="number" id="fs" min="12" max="20" value="16"></label></div>
+        <div><label>Corner radius (px)<br><input type="number" id="rad" min="0" max="20" value="12"></label></div>
+      </div>
+
+      <div class="toolbar" style="margin-top:.4rem">
+        <div><label>Header bg <input type="color" id="cHeader" value="#294b7a"></label></div>
+        <div><label>Header text <input type="color" id="cHeaderTxt" value="#ffffff"></label></div>
+        <div><label>Stripe <input type="color" id="cStripe" value="#f6f7f9"></label></div>
+        <div><label>Border <input type="color" id="cBorder" value="#e5e7eb"></label></div>
+        <div><label>Price <input type="color" id="cPrice" value="#111827"></label></div>
+        <div><label>Subline <input type="color" id="cSub" value="#9b1c1c"></label></div>
+        <div><label>Button bg <input type="color" id="cBtn" value="#2337c6"></label></div>
+        <div><label>Hover <input type="color" id="cBtnH" value="#1c2ea8"></label></div>
+        <div><label>Button text <input type="color" id="cBtnTxt" value="#ffffff"></label></div>
+      </div>
+
+      <div class="card scroller" id="builderHolder"></div>
+
+      <details style="margin-top:.6rem">
+        <summary class="hint">Buttons (text + URL) per plan</summary>
+        <div id="btnConfig" class="toolbar" style="gap:.75rem;margin-top:.6rem"></div>
+      </details>
+    </section>
+
+    <!-- PREVIEW + OUTPUT -->
+    <section class="panel">
+      <h2>2) Preview</h2>
+      <div class="card"><div id="preview" class="pt-wrap"></div></div>
+
+      <h2 style="margin-top:12px">3) Generate → WordPress HTML</h2>
+      <div class="toolbar">
+        <button class="primary" id="generate">Generate HTML</button>
+        <button class="secondary" id="copy" disabled>Copy</button>
+        <span id="copied" class="hint"></span>
+      </div>
+      <textarea id="output" style="width:100%;min-height:220px;font-family:ui-monospace,Menlo,monospace"></textarea>
+      <p class="hint">Paste into a <b>Custom HTML</b> block/widget. The snippet keeps your responsive setting and design tokens.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+/* helpers */
+const $=s=>document.querySelector(s);
+const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const uid=()=>'pt-'+Math.random().toString(36).slice(2,8);
+const linesToHtml=val=>{const p=(val||'').split(/\n+/); if(p.length===1) return esc(p[0]); const [h,...r]=p; return esc(h)+r.map(x=>`<span class="sub">${esc(x)}</span>`).join('');};
+
+/* state */
+let R=5,F=4,headers=['PLAN ID','PROCESSOR','MEMORY','STORAGE','BANDWIDTH'],table=[],buttons=[],uniqueId=uid();
+function init(){
+  R=+$('#plans').value; F=+$('#features').value;
+  headers=headers.slice(0,F+1); while(headers.length<F+1) headers.push('Feature '+headers.length);
+  table=Array.from({length:R},(_,r)=>{const row=Array.from({length:F+2},()=>''); row[0]=['INDS-1','INDS-2','INDS-3','INDS-4','INDS-5'][r]||`Plan ${r+1}`; return row;});
+  buttons=Array.from({length:R},()=>({text:'Buy Now',url:'#'}));
+}
+init();
+
+/* builder */
+function renderBuilder(){
+  const t=document.createElement('table'); t.className='builder';
+  const thead=document.createElement('thead'); const tbody=document.createElement('tbody');
+  const hr=document.createElement('tr');
+  for(let i=0;i<=F+1;i++){
+    const th=document.createElement('th'); th.contentEditable=true; th.dataset.h=i;
+    th.textContent=headers[i]||(i===0?'Plan':i===F+1?'Offer Price':`Feature ${i}`);
+    th.addEventListener('input',()=>{headers[i]=th.innerText.trim(); renderPreview();});
+    hr.appendChild(th);
+  }
+  const thBtn=document.createElement('th'); thBtn.textContent='Action'; hr.appendChild(thBtn);
+  thead.appendChild(hr);
+
+  for(let r=0;r<R;r++){
+    const tr=document.createElement('tr');
+    for(let c=0;c<=F+1;c++){
+      const tag=(c===0)?'th':'td', cell=document.createElement(tag);
+      if(c===0) cell.style.fontWeight='800';
+      cell.contentEditable=true; cell.dataset.r=r; cell.dataset.c=c; cell.textContent=table[r][c]||'';
+      cell.addEventListener('input',()=>{table[r][c]=cell.innerText; renderPreview();});
+      tr.appendChild(cell);
+    }
+    const td=document.createElement('td'); td.textContent='(button set below)'; tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+  t.appendChild(thead); t.appendChild(tbody);
+  $('#builderHolder').innerHTML=''; $('#builderHolder').appendChild(t);
+  renderBtnConfig();
+}
+
+/* buttons config */
+function renderBtnConfig(){
+  const box=$('#btnConfig'); box.innerHTML='';
+  for(let r=0;r<R;r++){
+    const w=document.createElement('div'); w.style.flex='1 1 280px';
+    w.innerHTML=`<div class="card"><strong>${esc(table[r][0]||'Plan '+(r+1))}</strong>
+      <div class="hint" style="margin:.35rem 0 .2rem">Button text</div>
+      <input type="text" data-t="${r}" value="${buttons[r].text}">
+      <div class="hint" style="margin:.35rem 0 .2rem">Button URL</div>
+      <input type="text" data-u="${r}" value="${buttons[r].url}"></div>`;
+    box.appendChild(w);
+  }
+  box.querySelectorAll('input[data-t]').forEach(i=>i.oninput=()=>{buttons[+i.dataset.t].text=i.value; renderPreview();});
+  box.querySelectorAll('input[data-u]').forEach(i=>i.oninput=()=>{buttons[+i.dataset.u].url=i.value;});
+}
+
+/* preview */
+function applyDesign(){
+  document.documentElement.style.setProperty('--header-bg',$('#cHeader').value);
+  document.documentElement.style.setProperty('--header-fg',$('#cHeaderTxt').value);
+  document.documentElement.style.setProperty('--stripe',$('#cStripe').value);
+  document.documentElement.style.setProperty('--border',$('#cBorder').value);
+  document.documentElement.style.setProperty('--price',$('#cPrice').value);
+  document.documentElement.style.setProperty('--sub',$('#cSub').value);
+  document.documentElement.style.setProperty('--btn-bg',$('#cBtn').value);
+  document.documentElement.style.setProperty('--btn-bg-h',$('#cBtnH').value);
+  document.documentElement.style.setProperty('--btn-fg',$('#cBtnTxt').value);
+  document.documentElement.style.setProperty('--fs',$('#fs').value+'px');
+  document.documentElement.style.setProperty('--font',$('#font').value);
+  document.documentElement.style.setProperty('--radius',$('#rad').value+'px');
+}
+function renderPreview(){
+  applyDesign();
+  // wrapper gets .stack only when toggle ON; CSS limits it to ≤860px
+  const wrap=document.createElement('div'); wrap.className='pt-wrap' + ($('#stackToggle').checked ? ' stack':'');
+  const t=document.createElement('table'); t.className='pt'; t.id=uniqueId;
+
+  const cap=$('#caption').value.trim(); if(cap){const c=document.createElement('caption'); c.textContent=cap; t.appendChild(c);}
+
+  const thead=document.createElement('thead'); const hr=document.createElement('tr');
+  for(let i=0;i<=F+1;i++){ const th=document.createElement('th'); th.textContent=(headers[i]||(i===0?'PLAN ID':i===F+1?'OFFER PRICE':'FEATURE '+i)).toUpperCase(); hr.appendChild(th); }
+  const thBtn=document.createElement('th'); thBtn.textContent='ACTION'; hr.appendChild(thBtn);
+  thead.appendChild(hr); t.appendChild(thead);
+
+  const tbody=document.createElement('tbody');
+  for(let r=0;r<R;r++){
+    const tr=document.createElement('tr');
+    // plan
+    const th=document.createElement('th'); th.className='plan'; th.innerHTML=linesToHtml(table[r][0]); if($('#stackToggle').checked) th.setAttribute('data-label',''); tr.appendChild(th);
+    // features
+    for(let c=1;c<=F;c++){ const td=document.createElement('td'); td.innerHTML=linesToHtml(table[r][c]); if($('#stackToggle').checked) td.setAttribute('data-label', headers[c]||`Feature ${c}`); tr.appendChild(td); }
+    // price
+    const tdP=document.createElement('td'); const p=(table[r][F+1]||'0').toString().trim();
+    tdP.innerHTML=`<span class="price">${esc($('#currency').value)} ${esc(p)}</span><div class="period">${esc($('#period').value||'')}</div>`;
+    if($('#stackToggle').checked) tdP.setAttribute('data-label','Offer Price'); tr.appendChild(tdP);
+    // action
+    const tdB=document.createElement('td'); tdB.className='cta'; const {text,url}=buttons[r]; tdB.innerHTML=`<a href="${esc(url)}" rel="nofollow">${esc(text)}</a>`;
+    if($('#stackToggle').checked) tdB.setAttribute('data-label',''); tr.appendChild(tdB);
+
+    tbody.appendChild(tr);
+  }
+  t.appendChild(tbody); wrap.appendChild(t);
+  $('#preview').innerHTML=''; $('#preview').appendChild(wrap);
+}
+
+/* generate (scoped) */
+function generateHTML(){
+  const id=uniqueId=uid(); const stack=$('#stackToggle').checked;
+  const tok={
+    headerBg:$('#cHeader').value, headerFg:$('#cHeaderTxt').value, stripe:$('#cStripe').value, border:$('#cBorder').value,
+    price:$('#cPrice').value, sub:$('#cSub').value, btn:$('#cBtn').value, btnH:$('#cBtnH').value, btnT:$('#cBtnTxt').value,
+    fs:$('#fs').value+'px', font:$('#font').value, radius:$('#rad').value+'px'
+  };
+  const cap=$('#caption').value.trim(), cur=$('#currency').value, per=$('#period').value.trim();
+
+  const css=`
+<style>
+#${id}{width:100%;border-collapse:separate;border-spacing:0;min-width:960px;font:${tok.fs}/1.45 ${tok.font}}
+#${id} caption{caption-side:top;text-align:left;font-weight:800;margin:0 0 .6rem}
+#${id} th,#${id} td{padding:1rem;border:1px solid ${tok.border};background:#fff;text-align:left;vertical-align:middle}
+#${id} thead th{background:${tok.headerBg};color:${tok.headerFg};font-weight:800}
+#${id} tbody tr:nth-child(odd) td,#${id} tbody tr:nth-child(odd) th{background:${tok.stripe}}
+#${id} .plan{font-weight:800}
+#${id} .price{color:${tok.price};font-weight:800}
+#${id} .period{margin-top:.15rem;color:#667085}
+#${id} .sub{display:block;margin-top:.2rem;color:${tok.sub};font-size:.86em;font-weight:600}
+#${id} .cta{text-align:right}
+#${id} .cta a{display:inline-block;background:${tok.btn};color:${tok.btnT};text-decoration:none;font-weight:800;border-radius:${tok.radius};padding:.6rem 1rem}
+#${id} .cta a:hover{background:${tok.btnH}}
+#${id} thead th:first-child{border-top-left-radius:${tok.radius}}
+#${id} thead th:last-child{border-top-right-radius:${tok.radius}}
+#${id} tbody tr:last-child td:first-child{border-bottom-left-radius:${tok.radius}}
+#${id} tbody tr:last-child td:last-child{border-bottom-right-radius:${tok.radius}}
+/* stack-to-cards only below 860px (if enabled) */
+@media (max-width:860px){
+  ${stack?`
+  #${id}{min-width:0;border-spacing:0}
+  #${id} thead{display:none}
+  #${id} tbody tr{display:block;margin:0 0 .9rem;border:1px solid ${tok.border};border-radius:${tok.radius};overflow:hidden}
+  #${id} tbody th,#${id} tbody td{display:grid;grid-template-columns:12ch auto;border:none;border-bottom:1px solid #f1f5f9}
+  /* Force all cells white in card mode, then paint the plan header. */
+  #${id} tbody th,#${id} tbody td{background:#fff !important}
+  #${id} tbody th.plan{background:${tok.headerBg} !important;color:${tok.headerFg} !important;grid-template-columns:auto;border-bottom:1px solid ${tok.border}}
+  #${id} tbody th.plan *{color:inherit !important}
+  #${id} tbody tr>*:last-child{border-bottom:0}
+  #${id} [data-label]::before{content:attr(data-label);font-weight:700;color:#334155;padding-right:.8rem}
+  #${id} .cta{grid-template-columns:auto;padding:0}
+  #${id} .cta::before{content:''}
+  #${id} .cta a{width:100%;border-radius:0 0 ${tok.radius} ${tok.radius};text-align:center}
+  `:''}
+}
+/* non-stacked small screens keep horizontal scroll */
+@media (max-width:760px){#${id}{min-width:${stack?'0':'720px'}}}
+</style>`.trim();
+
+  const labels=[...Array(F+2)].map((_,i)=>(headers[i]||(i===0?'PLAN ID':i===F+1?'OFFER PRICE':'FEATURE '+i)).toUpperCase());
+  let html=`<div class="pt-wrap${stack?' stack':''}"><table id="${id}" class="pt">`;
+  if(cap) html+=`\n  <caption>${esc(cap)}</caption>`;
+  html+=`\n  <thead>\n    <tr>`;
+  labels.forEach(l=>html+=`\n      <th>${esc(l)}</th>`); html+=`\n      <th>ACTION</th>\n    </tr>\n  </thead>\n  <tbody>`;
+  for(let r=0;r<R;r++){
+    html+=`\n    <tr>`;
+    html+=`\n      <th class="plan"${stack?' data-label=""':''}>${linesToHtml(table[r][0]||'')}</th>`;
+    for(let c=1;c<=F;c++){
+      html+=`\n      <td${stack?` data-label="${esc(headers[c]||'Feature '+c)}"`:''}>${linesToHtml(table[r][c]||'')}</td>`;
+    }
+    const price=esc((table[r][F+1]||'0').toString().trim());
+    html+=`\n      <td${stack?' data-label="Offer Price"':''}><span class="price">${esc(cur)} ${price}</span><div class="period">${esc(per)}</div></td>`;
+    const {text,url}=buttons[r];
+    html+=`\n      <td class="cta"${stack?' data-label=""':''}><a href="${esc(url)}" rel="nofollow">${esc(text)}</a></td>`;
+    html+=`\n    </tr>`;
+  }
+  html+=`\n  </tbody>\n</table></div>`;
+
+  $('#output').value=css+'\n'+html; $('#copy').disabled=false;
+}
+
+/* events */
+$('#plans').onchange=e=>{R=Math.max(2,+e.target.value||2);
+  if(table.length<R){for(let i=table.length;i<R;i++){table.push(Array.from({length:F+2},()=>'')); table[i][0]=`Plan ${i+1}`; buttons.push({text:'Buy Now',url:'#'});} }
+  else {table.length=R; buttons.length=R;}
+  renderBuilder(); renderPreview();
+};
+$('#features').onchange=e=>{F=Math.max(2,+e.target.value||2);
+  table=table.map(row=>{const need=F+2; return row.length<need? row.concat(Array.from({length:need-row.length},()=>'')) : row.slice(0,need);});
+  if(headers.length<F+1){for(let i=headers.length;i<F+1;i++) headers[i]=`Feature ${i}`;} else headers.length=F+1;
+  renderBuilder(); renderPreview();
+};
+['caption','currency','period','font','fs','rad','stackToggle','cHeader','cHeaderTxt','cStripe','cBorder','cPrice','cSub','cBtn','cBtnH','cBtnTxt']
+  .forEach(id=>$('#'+id).addEventListener('input', renderPreview));
+
+$('#generate').onclick=generateHTML;
+$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#output').value); $('#copied').textContent='Copied ✔'; setTimeout(()=>$('#copied').textContent='',1400);}catch{$('#copied').textContent='Press Ctrl/Cmd + C';}};
+
+/* init render */
+function renderBtnConfig(){const box=$('#btnConfig'); box.innerHTML=''; for(let r=0;r<R;r++){const w=document.createElement('div'); w.style.flex='1 1 280px'; w.innerHTML=`<div class="card"><strong>${esc(table[r][0]||'Plan '+(r+1))}</strong>
+<div class="hint" style="margin:.35rem 0 .2rem">Button text</div><input type="text" data-t="${r}" value="${buttons[r].text}">
+<div class="hint" style="margin:.35rem 0 .2rem">Button URL</div><input type="text" data-u="${r}" value="${buttons[r].url}"></div>`; box.appendChild(w);}
+box.querySelectorAll('input[data-t]').forEach(i=>i.oninput=()=>{buttons[+i.dataset.t].text=i.value; renderPreview();});
+box.querySelectorAll('input[data-u]').forEach(i=>i.oninput=()=>{buttons[+i.dataset.u].url=i.value;});
+}
+renderBuilder(); renderPreview();
+</script>
+</body>
+</html>
